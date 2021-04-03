@@ -1,4 +1,8 @@
-# ds4phbme-project
-Project by 1. Vinayak Bhardwaj, 2. Sejal Ghate and 3. Aditya Dahiya
+# Project for the cklass DS4PHBME
+
+Project by 
+1. Vinayak Bhardwaj, 
+2. 2. Sejal Ghate and 
+3. 3. Aditya Dahiya
 
 This is a private GitHub repo.
