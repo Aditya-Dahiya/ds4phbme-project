@@ -6,6 +6,7 @@ library(here)
 # For viewing data missingness
 library(naniar)
 
+# Get data stored in the directories of the repo
 cityday = read.csv(here("data", "raw", "city_day.csv"))
 
 library(lubridate)
