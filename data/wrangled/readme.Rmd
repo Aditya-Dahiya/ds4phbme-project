@@ -1,0 +1,3 @@
+# Processed Data goes in this folder
+
+Please add citations / sources to the commit.
