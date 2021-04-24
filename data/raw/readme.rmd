@@ -1,3 +1,0 @@
-# This is the Repo folder for Raw data files
-
-Please add citation / source of the file in the Commit description
