@@ -5,4 +5,6 @@ Project by
 2. Sejal Ghate and 
 3. Aditya Dahiya.
 
-This is a private GitHub repo. Lets collaborate !
+This repo is now public, as we will be displaying our app for the entire class to see.  
+
+Lets collaborate !
