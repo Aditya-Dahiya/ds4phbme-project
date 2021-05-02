@@ -105,6 +105,10 @@ ggplot(Plotdata, aes(x = Date)) +
     )
 
 ############ 4. USA map showing the County Locations ##############
+USstates %>%
+    mutate(FillVar = ifelse(NAME == Sel_State,
+                            yes = 1, 
+                            no = 0)) %>%
 ggplot() +
     geom_sf(data = USstates, 
             aes(fill = as.factor(FillVar)), 
