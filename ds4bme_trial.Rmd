@@ -1,0 +1,76 @@
+---
+title: "Example Flex Dashboard"
+output: 
+  flexdashboard::flex_dashboard:
+    theme: united
+    css: styles.css
+runtime: shiny
+---
+
+Overview
+===================================== 
+    
+Column
+-------------------------------------
+    
+### US Map showing Pollution
+    
+```{r}
+
+```
+
+### Graph of different pollutants
+    
+```{r}
+
+
+```
+   
+Column
+-------------------------------------
+    
+### Population statistics graph
+
+```{r}
+
+```
+
+Data Analysis: Correlation of population with pollutants
+=====================================     
+
+### Chart 1
+    
+```{r}
+```
+    
+### Chart 2
+
+```{r}
+```
+
+Prediction
+=====================================     
+
+```{r echo=FALSE,warning=FALSE,message=FALSE}
+
+selectizeInput("Education level",label=h3("Select the required countries"),
+            choices=c('Italy','India','Brazil','Spain'),selected='India',multiple=T)
+
+selectInput("Age",label=h3("Select the required Scale"),
+            choices=c('Raw Scale','Natural Log'))
+
+radioButtons('County',label=h3('Do you want a smoothed time series?'),choices=c('Yes','No'))
+
+radioButtons('Category of pollutants',label=h3('Select data'),choices=c('Total cases','Deaths','Recoveries'))
+
+radioButtons('Population density',label=h3('Plot from:'),choices=c('Time from calender date','Time since first case'), selected = 'Time from calender date')
+
+dateRangeInput("dates", label = h3("Date range"),format = "mm-dd-yyyy", start = "2021-01-01",
+               end = "2021-03-20")
+
+
+```
+
+
+About
+=====================================     
