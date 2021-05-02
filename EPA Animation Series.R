@@ -50,14 +50,14 @@ g = ggplot(data = USmap) +
               aes(y = yloc, x = xloc, 
                   label = as.character(Year)), 
               check_overlap = TRUE, 
-              size = 5, 
+              size = 10, 
               fontface="bold") + 
     scale_color_gradientn(colours = topo.colors(7), 
                           na.value = "transparent",
                           breaks = c(0, 5, 10, 15),
                           labels = c(0, 5, 10, 15),
                           limits = c(0, 20), 
-                          name = TeX("PM_{2.5} \ (ug/m^{3})")) +
+                          name = "PM 2.5(ug/m3)") +
     theme(legend.position = "right")
 
 ganim = g + transition_states(states = Year,
@@ -66,10 +66,11 @@ ganim = g + transition_states(states = Year,
                               wrap = TRUE) +
     enter_recolor() +
     exit_recolor()
-
+options(gganimate.dev_args = list(width = 400, height = 200))
 animate(ganim,
         start_pause = 0,
-        end_pause = 4)
+        end_pause = 4
+        )
 
 anim_save("gganim1995-2020.gif")
 
@@ -106,9 +107,7 @@ g1 = ggplot(AnnData1) +
          subtitle = "(with overlaid mean curve)") +
     theme(legend.position = "none")
 
-ggsave("g1-lineplot.png",
-       device = "png")
-
+options(gganimate.dev_args = list(width = 400, height = 200))
 g1anim = g1 + transition_reveal(Year) +
     shadow_mark() +
     enter_fade()
@@ -117,4 +116,39 @@ animate(g1anim)
 
 anim_save("g1lineplot.gif")
 
+######### Second Animation : Without Jitter ##########
 
+AnnData1 = AnnData %>%
+    group_by(Year) %>%
+    mutate(MMPM2.5 = mean(MeanPM2.5)) %>%
+    ungroup()
+
+
+g1 = ggplot(AnnData1) +
+     geom_line(mapping = aes(x = Year, 
+                             y = MMPM2.5, 
+                             col = MMPM2.5),
+             # col = "darkgrey",
+               lwd = 1.5) + 
+     scale_y_continuous(limits = c(quantile(AnnData$MeanPM2.5, 0.1),
+                                   quantile(AnnData$MeanPM2.5, 0.9))) +
+     scale_color_gradientn(colours = topo.colors(7), 
+                           na.value = "transparent",
+                           breaks = c(0, 5, 10, 15),
+                           labels = c(0, 5, 10, 15),
+                           limits = c(0, 20), 
+                           name = "PM 2.5 (ug/m3)")+
+    theme_classic() +
+    labs(x = "Year",
+         y = "PM 2.5 (ug/m3)",
+         title = "PM 2.5 levels trend over the Years") +
+    theme(legend.position = "none")
+
+options(gganimate.dev_args = list(width = 400, height = 200))
+
+g1anim = g1 + transition_reveal(Year) +
+    shadow_mark() +
+    enter_fade()
+animate(g1anim)
+
+anim_save("g1lineplot.gif")
