@@ -20,7 +20,7 @@ library(plotly)
 library(shinyWidgets)
 library(shiny)
 library(RColorBrewer)
-
+library(rnaturalearthdata)
 ##################### Global Data Sets Loading ##########################
 
 # Loading the wrangled data sets
