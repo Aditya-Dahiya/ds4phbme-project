@@ -10,7 +10,6 @@ runtime: shiny
 ```{r}
 # Loading libraries
 library(tidyverse)
-library(here)
 library(lubridate)
 library(latex2exp)
 library(sf)
@@ -25,7 +24,7 @@ library(RColorBrewer)
 ##################### Global Data Sets Loading ##########################
 
 # Loading the wrangled data sets
-load(here("data", "wrangled", "Annual_Data_PM2-5_Sites.rda"))
+load(url("https://raw.githubusercontent.com/Aditya-Dahiya/ds4phbme-project/main/data/wrangled/Annual_Data_PM2-5_Sites.rda"))
 
 # Plotting the Annual Average Data on PM 2.5 on USA map
 
@@ -317,14 +316,16 @@ renderPlot({
 Data Analysis
 =====================================     
 
-
 ```{r global}
 library(tidyverse)
 library(shiny)
 
 # Loading the daily PM 2.5 and AQI data set
 
-load("./data/wrangled/List_of_States_Counties_Cities.rda")
+load(url("https://raw.githubusercontent.com/Aditya-Dahiya/ds4phbme-project/main/data/wrangled/Daily_Data_10years.rda"))
+
+load(url("https://raw.githubusercontent.com/Aditya-Dahiya/ds4phbme-project/main/data/wrangled/List_of_States_Counties_Cities.rda"))
+
 
 # Creating subsets using User Inputs for the Shiny App
 List_States = unique(ListDlyData$`State Name`)[1:50]
@@ -335,6 +336,8 @@ Column {.sidebar}
 -----------------------------------------------------------------------
 
 ### Select Counties and Cities to compare
+
+This page pulls data off the EPA's [API webpage](https://aqs.epa.gov/aqsweb/documents/data_api.html) to display analytic trends of PM 2.5 (in ${\mu}g / m^{3}$) across different Counties selected by the user. 
 
 ```{r}
 selectInput(inputId = "Sel_State1", 
@@ -380,6 +383,13 @@ Plotdata = reactive({
   })
 
 ```
+
+**Note 1: Kindly wait a till the page loads and extracts data off the web.**
+
+
+**Note 2:** This page extracts data previously scraped and stored in GitHub to ensure quicker response time. Detailed data extraction is in this [R Script]().
+
+
 
 Column 
 -----------------------------------------------------------------------
