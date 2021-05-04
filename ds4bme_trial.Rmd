@@ -110,8 +110,8 @@ This project focuses on the [Air Data](https://www.epa.gov/outdoor-air-quality-d
 (b) Data harvested from the Air Quality System (AQS) API using the R package [aqrs](https://github.com/jpkeller/aqsr), developed by [Joshua P. Keller](https://github.com/jpkeller), [Roger D. Peng](https://github.com/rdpeng) and [Daniel Bride](https://github.com/danielbride).  
 
 (c) A special [data set](https://raw.githubusercontent.com/opencasestudies/ocs-bp-air-pollution/master/data/raw/pm25_data.csv) created by [Roger D. Peng](https://github.com/rdpeng), used by Open Case Studies project on predicting PM 2.5 levels using machine learning algorithms in [tidymodels](https://www.tidymodels.org/).  
-\
-\
+
+**Tabs in the app**:  
 
 - The **Visualization** tab shows different visualizations of $PM_{2.5}$ levels in ${\mu}g/m^{3}$ over time periods, states, sites and seasons.  
 - Then, **Data Analysis** tab adds important graphs to analyze month-wise, year-wise and smoothed trens of PM 2.5 levels in various counties selected by the user. It also allows one to examine data in cities within the selected counties.  
