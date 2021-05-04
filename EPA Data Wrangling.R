@@ -30,6 +30,7 @@ load(file = here("data", "wrangled", "EPA_Monitors_List.rda"))
 
 # Creating a vector of Years for which data is to be used and combined
 Years = seq(from = 1995, to = 2020, by = 1)
+
 AnnData = data.frame()
 for (yr in Years){
     AnnData = bind_rows(AnnData, 
@@ -42,13 +43,13 @@ for (yr in Years){
     filter(`Pollutant Standard` == "PM25 24-hour 2012") %>%
     select(c("State Code", "County Code", "Site Num",
              "Parameter Code", "Latitude", "Longitude",
-             "Arithmetic Mean", "Arithmetic Standard Dev",
+             "Arithmetic Mean", "1st Max Value",
              "State Name", "County Name", "City Name")) %>%
     rename(MeanPM2.5 = `Arithmetic Mean`) %>%
-    rename(sdPM2.5 = `Arithmetic Standard Dev`) %>%
+    rename(MaxPM2.5 = `1st Max Value`) %>%
     mutate(Year = yr) %>%
     mutate(MeanPM2.5 = round(MeanPM2.5, 2)) %>%
-    mutate(sdPM2.5 = round(sdPM2.5, 2))
+    mutate(MaxPM2.5 = round(MaxPM2.5, 2))
     )
 }
 
@@ -89,3 +90,42 @@ for (yrs in Years){
 }
 
 save(DlyData, file = here("data", "wrangled", "Daily_Data_10years.rda"))
+
+
+
+######################## Post-App Creation Phase ##########################
+library(tidyverse)
+library(here)
+library(magrittr)
+
+# The huge Data Set DlyData is not picked up by Shiny App.
+# So, we create smaller data sets for each state
+# We can call these data sets for use during Shiny App separately
+load(here("data", "wrangled", "Daily_Data_10years.rda"))
+List_States = unique(DlyData$`State Name`)[1:50]
+
+for (i in 1:length(List_States)){
+    StateDlyData = DlyData %>%
+        filter(`State Name` == List_States[i]) %>%
+        mutate(Month = lubridate::month(Date, label = TRUE)) %>%
+        mutate(Year = lubridate::year(Date))
+    
+    saveRDS(StateDlyData, file = here("data", "wrangled", 
+                         paste0("Statewise_DailyData_", List_States[i], ".rds" )
+                         )
+             )
+}
+
+# Creating a master data set for State, County and City Name
+# We will keep its name as ListDlyData
+
+ListDlyData = DlyData %>%
+                select(`State Name`, `County Name`, `City Name`) %>%
+                distinct(`State Name`, `County Name`, `City Name`)
+
+save(ListDlyData, file = here("data", 
+                              "wrangled", 
+                              "List_of_States_Counties_Cities.rda"))
+
+
+

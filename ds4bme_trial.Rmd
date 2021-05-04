@@ -20,12 +20,12 @@ library(rnaturalearth)
 library(plotly)
 library(shinyWidgets)
 library(shiny)
+library(RColorBrewer)
 
 ##################### Global Data Sets Loading ##########################
 
 # Loading the wrangled data sets
 load(here("data", "wrangled", "Annual_Data_PM2-5_Sites.rda"))
-load(here("data", "wrangled", "Daily_Data_10years.rda"))
 
 # Plotting the Annual Average Data on PM 2.5 on USA map
 
@@ -60,7 +60,6 @@ temp = str_split(string = UScounties$ID,
 UScounties = bind_cols(UScounties, temp)
 rm(temp)
 
-CompleteListCounty = unique(DlyData$`County Name`) %>% sort()
 
 ```
 
@@ -91,6 +90,12 @@ Column
 
 ### Project Overview
 
+
+**US EPA Air Pollution Data (PM 2.5)**  
+
+
+**Data Visualization, Analysis and Prediction**
+
 Authors:  
 
 1. Sejal Ghate (BME student, Whiting School)  
@@ -109,18 +114,21 @@ This project focuses on the [Air Data](https://www.epa.gov/outdoor-air-quality-d
 \
 \
 
-The **Visualization** tab shows different visualizations of $PM_{2.5}$ levels in ${\mu}g/m^{3}$ over time periods, states, sites and seasons. Then, **Data Analysis** tab analyzes Roger D. Peng's [dataset](https://raw.githubusercontent.com/opencasestudies/ocs-bp-air-pollution/master/data/raw/pm25_data.csv) and displays important predictors. Fianlly, the **Prediction** tab uses machine learning algorithms to predict $PM_{2.5}$ levels and find best predictor variables.
+- The **Visualization** tab shows different visualizations of $PM_{2.5}$ levels in ${\mu}g/m^{3}$ over time periods, states, sites and seasons.  
+- Then, **Data Analysis** tab adds important graphs to analyze month-wise, year-wise and smoothed trens of PM 2.5 levels in various counties selected by the user. It also allows one to examine data in cities within the selected counties.  
+- Finally, the **Prediction** tab analyzes Roger D. Peng's [dataset](https://raw.githubusercontent.com/opencasestudies/ocs-bp-air-pollution/master/data/raw/pm25_data.csv) and displays important predictors. It then uses machine learning algorithms to predict $PM_{2.5}$ levels and find best predictor variables.  
 
-```{r}
-
-```
 
 Visualizations
 ===================================== 
     
 Inputs {.sidebar}
 -------------------------------------
-Shiny app inputs 
+
+The [EPA](https://www.epa.gov/) collects [Air Quality data](https://www.epa.gov/outdoor-air-quality-data) from Outdoor Monitor sites across the US. This page harvests data from EPA's API [webpage](https://aqs.epa.gov/aqsweb/documents/data_api.html), and displays the outdoor monitors' location and their average annual PM 2.5 levels.  
+
+**Select the state and year to update the maps**  
+
 ```{r}
 # shiny inputs defined here
 pickerInput(
@@ -136,9 +144,9 @@ sliderInput(inputId = "Sel_Year",
             max = 2020, 
             value = 2015)
 
-
 ```
- 
+
+
 Column
 -------------------------------------
     
@@ -184,28 +192,45 @@ ggplotly(
 })
 ```
     
-### Location of selected State on map of USA
+### Maxmimum PM 2.5 levels (ug/m3) recorded at each site during the year
 
 ```{r}
-renderPlot({
-  
-    Sel_State = input$Sel_State
+renderPlotly({
 
-    USstates %>%
-    mutate(FillVar = ifelse(NAME == Sel_State,
-                            yes = 1, 
-                            no = 0)) %>%
-    ggplot() +
-    geom_sf(aes(fill = as.factor(FillVar)), 
-            color = "black",
+Sel_State = input$Sel_State
+Sel_Year = input$Sel_Year
+ggplotly(
+    ggplot(data = USmap) +
+    geom_sf(data = USstates, 
+            fill = NA, 
+            color = "grey",
             alpha = 0.5) +
     coord_sf(xlim = c(-125, -66), ylim = c(24.5, 50), 
              expand = FALSE) +
-    theme_void() +
-    scale_fill_manual(values = c("0" = "white", "1" = "red")) +
-    theme(legend.position = "none")
-  
-  
+    ggthemes::theme_map() + 
+    geom_point(data = AnnData[AnnData$Year == Sel_Year, ],
+               mapping = aes(x = Longitude, 
+                             y = Latitude,
+                             col = MaxPM2.5,
+                             text = `County Name`,
+                             text1 = `City Name`),
+               size = 0.7,
+               alpha = 0.5,
+               pch = 20) +
+    geom_text(data = AnnData[AnnData$Year == Sel_Year, ], 
+              aes(y = yloc, x = xloc, 
+                  label = as.character(Year)), 
+              check_overlap = TRUE, 
+              size = 5, 
+              fontface="bold") + 
+    scale_color_gradientn(colours = rev(heat.colors(10)), 
+                          na.value = "transparent",
+                          breaks = c(0, 25, 50, 75),
+                          labels = c(0, 25, 50, 75),
+                          limits = c(0, 100), 
+                          name = "PM 2.5 (ug/m3)"),
+    tooltip = c("text", "text1", "MaxPM2.5")
+    )
 })
 
 ```
@@ -254,7 +279,7 @@ renderPlotly({
 ```
 
 
-### State-wise Mean PM 2.5 level trends (1995 - 2020)
+### State-wise Mean PM 2.5 level trends (1995 - 2020): Selected state highlighted
 
 
 ```{r}
@@ -289,47 +314,178 @@ renderPlot({
 ```  
 
 
-
 Data Analysis
 =====================================     
 
-Inputs {.sidebar}
--------------------------------------
-Shiny app inputs 
-```{r}
 
-selectInput(inputId = "Sel_State", 
-            label = "Select a state", 
+```{r global}
+library(tidyverse)
+library(shiny)
+
+# Loading the daily PM 2.5 and AQI data set
+
+load("./data/wrangled/List_of_States_Counties_Cities.rda")
+
+# Creating subsets using User Inputs for the Shiny App
+List_States = unique(ListDlyData$`State Name`)[1:50]
+
+```
+
+Column {.sidebar}
+-----------------------------------------------------------------------
+
+### Select Counties and Cities to compare
+
+```{r}
+selectInput(inputId = "Sel_State1", 
+            label = "Select a state :",
             choices = List_States,
-            selected = List_States[5],
-            multiple = FALSE)
+            selected = List_States[5])
 
-selectInput(inputId = "Sel_County", 
-            label = "Select Counties", 
-            choices = CompleteListCounty,
+List_Counties = reactive({
+  unique(ListDlyData[ListDlyData$`State Name` %in% input$Sel_State1, ]$`County Name`) %>% 
+    sort()
+})
+
+renderUI({
+selectInput(inputId = "Sel_County1", 
+            label = "Select Counties to analyse:",
+            choices = List_Counties(),
+            selected = List_Counties()[c(12, 13)],
             multiple = TRUE)
+  })
 
+List_Cities = reactive({
+  unique(ListDlyData[ListDlyData$`County Name` %in% input$Sel_County1, ]$`City Name`) %>% 
+    sort()
+})
 
-sliderInput(inputId = "Sel_Year", 
-            label = "Select year to display", 
-            min = 1995, 
-            max = 2020, 
-            value = c(2014, 2019))
+renderUI({
+selectInput(inputId = "Sel_City1", 
+            label = "Select Cities within these Counties:",
+            choices = List_Cities(),
+            selected = List_Cities()[1:length(List_Cities())],
+            multiple = TRUE)
+  })
 
+load("C:/Users/myste/Documents/Online MPH Johns Hopkins/140.628.01 - Data Science for Public Health I/ds4phbme-project/data/wrangled/Daily_Data_10years.rda")
 
+Plotdata = reactive({
+        DlyData %>%
+        filter(`State Name` %in% input$Sel_State1,
+               `County Name` %in% input$Sel_County1) %>%
+        mutate(Month = lubridate::month(Date,
+                                        label = TRUE)) %>%
+        mutate(Year = lubridate::year(Date))
+  })
 
 ```
 
+Column 
+-----------------------------------------------------------------------
 
-### Chart 1
-    
+### Chart 1 - Plot of daily PM 2.5 levels, with an overlaid smoothing line
+
 ```{r}
-```
+
+renderPlot({
     
-### Chart 2
+    Plotdata4 = Plotdata()
+    
+    ggplot(data = Plotdata4, aes(x = Date, y = PM2.5)) + 
+        geom_smooth(aes(y = PM2.5, 
+                            col = `County Name`),
+                            se = FALSE) +
+        geom_point(aes(col = `County Name`),
+                   alpha = 0.1,
+                   pch = 20) + 
+        scale_y_continuous(limits = c(0,
+                                      quantile(Plotdata4$PM2.5, 0.9))) + 
+        theme_classic() + 
+        theme(legend.position = "bottom") +
+        labs(x = NULL, 
+             y = latex2exp::TeX("PM_{2.5} \ \ levels \ \ (ug / m^{3})")
+        )
+    
+})
+
+```
+
+
+### Average PM 2.5 levels in different Cities within these Counties
 
 ```{r}
+renderPlot({
+  
+  Plotdata1 = Plotdata()
+  
+  ggplot(Plotdata1, aes(x = Date)) + 
+    geom_smooth(aes(y = PM2.5, 
+                    col = `City Name`),
+                    se = FALSE) +
+    theme_classic() + 
+    theme(legend.position = "bottom") +
+    labs(x = NULL,
+         y = latex2exp::TeX("PM_{2.5} \ \ levels \ \ (ug / m^{3})"))
+  
+})
+
+
 ```
+
+
+Column 
+-----------------------------------------------------------------------
+
+### Average monthly PM 2.5 levels 
+
+```{r}
+renderPlot({
+  
+  Plotdata2 = Plotdata()
+  
+  ggplot(data = Plotdata2) +
+    geom_boxplot(mapping = aes(x = Month, 
+                               y = PM2.5,
+                               col = `County Name`),
+                 outlier.size = 1,
+                 outlier.alpha = 0.1) +
+    scale_y_continuous(limits = c(0, 
+                                  quantile(Plotdata2$PM2.5, 0.99))) +
+    theme_classic() +
+    theme(legend.position = "bottom") +
+    labs(x = NULL, 
+         y = latex2exp::TeX("PM_{2.5} \ \ levels \ \ (ug / m^{3})"))
+
+})
+```
+    
+### Annual Average PM 2.5 Levels (ug/m3)
+
+```{r}
+renderPlot({
+  
+  Plotdata3 = Plotdata()
+  
+  ggplot(data = Plotdata3) +
+    geom_boxplot(mapping = aes(x = as.factor(Year), 
+                               y = PM2.5,
+                               col = `County Name`),
+                 outlier.size = 1,
+                 outlier.alpha = 0.1) +
+    scale_y_continuous(limits = c(0, 
+                                  quantile(Plotdata3$PM2.5, 0.99))) +
+    theme_classic() +
+    theme(legend.position = "bottom") +
+    labs(x = NULL, 
+         y = latex2exp::TeX("PM_{2.5} \ \ levels \ \ (ug / m^{3})"))
+  
+})
+```
+
+
+
+
 
 Prediction
 =====================================     
