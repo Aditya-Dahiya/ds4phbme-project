@@ -387,7 +387,7 @@ Plotdata = reactive({
 **Note 1: Kindly wait a till the page loads and extracts data off the web.**
 
 
-**Note 2:** This page extracts data previously scraped and stored in GitHub to ensure quicker response time. Detailed data extraction is in this [R Script]().
+**Note 2:** This page extracts data previously scraped and stored in GitHub to ensure quicker response time. Detailed data extraction is in this [R Script](https://github.com/Aditya-Dahiya/ds4phbme-project/blob/main/EPA%20Datasets%20Fetch%20AQSR.R).
 
 
 
