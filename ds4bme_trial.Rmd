@@ -191,7 +191,7 @@ ggplotly(
 })
 ```
     
-### Maxmimum PM 2.5 levels (ug/m3) recorded at each site during the year
+### Maximum PM 2.5 levels (ug/m3) recorded at each site during the year
 
 ```{r}
 renderPlotly({
@@ -335,9 +335,9 @@ List_States = unique(ListDlyData$`State Name`)[1:50]
 Column {.sidebar}
 -----------------------------------------------------------------------
 
-### Select Counties and Cities to compare
+This page pulls data off the EPA's [API webpage](https://aqs.epa.gov/aqsweb/documents/data_api.html) to display analytic trends of PM 2.5 (in ${\mu}g / m^{3}$) across different Counties selected by the user.  
 
-This page pulls data off the EPA's [API webpage](https://aqs.epa.gov/aqsweb/documents/data_api.html) to display analytic trends of PM 2.5 (in ${\mu}g / m^{3}$) across different Counties selected by the user. 
+**Note: Kindly wait for a few moments till the page loads data from the web.**  
 
 ```{r}
 selectInput(inputId = "Sel_State1", 
@@ -371,8 +371,6 @@ selectInput(inputId = "Sel_City1",
             multiple = TRUE)
   })
 
-load("C:/Users/myste/Documents/Online MPH Johns Hopkins/140.628.01 - Data Science for Public Health I/ds4phbme-project/data/wrangled/Daily_Data_10years.rda")
-
 Plotdata = reactive({
         DlyData %>%
         filter(`State Name` %in% input$Sel_State1,
@@ -384,10 +382,7 @@ Plotdata = reactive({
 
 ```
 
-**Note 1: Kindly wait a till the page loads and extracts data off the web.**
-
-
-**Note 2:** This page extracts data previously scraped and stored in GitHub to ensure quicker response time. Detailed data extraction is in this [R Script](https://github.com/Aditya-Dahiya/ds4phbme-project/blob/main/EPA%20Datasets%20Fetch%20AQSR.R).
+**Note:** This page extracts data previously scraped and stored in GitHub to ensure quicker response time. Detailed data extraction is in this [R Script](https://github.com/Aditya-Dahiya/ds4phbme-project/blob/main/EPA%20Datasets%20Fetch%20AQSR.R).
 
 
 
