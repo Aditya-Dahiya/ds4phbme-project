@@ -568,5 +568,5 @@ Vinayak's photo here
 ### Aditya Dahiya  
 
 ```{r}
-knitr::include_graphics(path = "./Aditya.jpg")
+knitr::include_graphics(path = "https://raw.githubusercontent.com/Aditya-Dahiya/ds4phbme-project/main/Aditya.jpg")
 ```
