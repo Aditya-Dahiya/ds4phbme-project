@@ -73,13 +73,13 @@ Column
 ### USA: Historical trends in PM 2.5 levels
 
 ```{r, echo=FALSE}
-knitr::include_graphics(path = "./gganim1995-2020.gif")
+knitr::include_graphics(path = "https://raw.githubusercontent.com/Aditya-Dahiya/ds4phbme-project/main/gganim1995-2020.gif")
 ```
 
 ### Average level of PM 2.5 in EPA monitoing stations over years
 
 ```{r}
-knitr::include_graphics(path = "./g1lineplot.gif")
+knitr::include_graphics(path = "https://raw.githubusercontent.com/Aditya-Dahiya/ds4phbme-project/main/g1lineplot.gif")
 ```
 
 
@@ -539,6 +539,8 @@ Column {data-width=850}
 7. R package [gganimate](https://gganimate.com/index.html) by Thomas Lin Pedersen & David Robinson
 
 8. R packages: `tidyverse`, `aqsr`, `tidymodels`, `here`, `lubridate`, `latex2exp`, `sf`, `maps`, `rgeos`, `rnaturalearth`, `plotly`, `corrplot`, `GGally`, `vip`, `ggthemes`.
+
+9. The animated graphs on **Overview** page were created using package `gganimate`, the source code is attached [here](https://raw.githubusercontent.com/Aditya-Dahiya/ds4phbme-project/main/g1lineplot.gif).
 
 ```{r}
 
