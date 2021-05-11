@@ -519,26 +519,6 @@ dateRangeInput("dates", label = h3("Date range"),format = "mm-dd-yyyy", start = 
 About
 =====================================  
 
-Column {data-width=850}
--------------------------------------
-    
-    
-    
-### Choosing the best predictors 
-
-We used the Variance Importance Plots method to determine the most important predictors of air pollution data. The code for the VIP determination is contained in the repo.
-
-The plots below show the most important predictors for the linear model.
-
-![VIP ranked order of variables here.] https://github.com/Aditya-Dahiya/ds4phbme-project/blob/main/variables_1?raw=true
-
-![VIP dot plot showing ranked order of variables in order of the top variables important for the prediction of pollution.] https://github.com/Aditya-Dahiya/ds4phbme-project/blob/main/variables_2?raw=true
-
-
-
-
-
-
 
 ```{r}
 
