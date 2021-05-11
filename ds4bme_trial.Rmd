@@ -591,7 +591,6 @@ Sejal's photo here
  
 ### Vinayak Bhardwaj  
 
-Vinayak's photo here
 
 ```{r}
 knitr::include_graphics(path = "https://github.com/Aditya-Dahiya/ds4phbme-project/blob/main/Vinayak.jpg?raw=true")
