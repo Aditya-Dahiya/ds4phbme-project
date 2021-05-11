@@ -17,6 +17,8 @@ Authors:
 
 2. Vinayak Bhardwaj (DrPH student, Bloomberg School)  
 
+Contribution to the project - focus was on identifying the best predictors for the dataset that we were working on. Using the ridge and lasso regression techniques I worked on creating a model with above 50% predictive power on the training data set (ridge regression and lasso regression R script given in the repo). Additionally, I worked on using the Variable Importance Predictor method to work out the most important variables in the given dataset. The results of this are provided in a separate r-script in the repo and referred to in the final write-up of the app (in the "About" tab).
+
 3. Aditya Dahiya (MPH student, Bloomberg School)  
 
 This project focuses on the [Air Data](https://www.epa.gov/outdoor-air-quality-data): Air Quality Data Collected at Outdoor Monitors Across the United States. It uses and combines data from three sources:-  
