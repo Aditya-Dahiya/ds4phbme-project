@@ -5,14 +5,17 @@ library(here)
 ### Reading in the Data
 
 # Signing up for the EPA
-# https://aqs.epa.gov/data/api/signup?email=adahiya3@jhu.edu
+# https://aqs.epa.gov/data/api/signup?email=**your-email-here**
 
 # Using the R package for accessing AQS API of the EPA
 # devtools::install_github("jpkeller/aqsr")
 library(aqsr)
 
+# Create variables AQS_EMAIL="........", AQS_KEY="......." 
+# from the email you received
+
+
 # Creating authentication for the data fetch from EPA's API
-# Create variables AQS_EMAIL="..", AQS_KEY=".." from your email received
 MyUser = aqsr::create_user(email = AQS_EMAIL, key = AQS_KEY)
 
 # Viewing the API services, 
