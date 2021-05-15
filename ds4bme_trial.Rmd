@@ -562,7 +562,7 @@ Column {data-width=150}
 Sejal's photo here
 
 ```{r}
-
+knitr::include_graphics(path = "https://raw.githubusercontent.com/Aditya-Dahiya/ds4phbme-project/main/sejal.jpeg")
 ```   
  
 ### Vinayak Bhardwaj  
