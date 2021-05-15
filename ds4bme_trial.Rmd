@@ -90,10 +90,7 @@ Column
 ### Project Overview
 
 
-**US EPA Air Pollution Data (PM 2.5)**  
-
-
-**Data Visualization, Analysis and Prediction**
+**US EPA Air Pollution Data (PM 2.5): Data Visualization, Analysis and Prediction**
 
 Authors:  
 
@@ -558,8 +555,6 @@ Column {data-width=150}
 -------------------------------------
    
 ### Sejal Ghate  
-
-Sejal's photo here
 
 ```{r}
 knitr::include_graphics(path = "https://raw.githubusercontent.com/Aditya-Dahiya/ds4phbme-project/main/sejal.jpeg")
