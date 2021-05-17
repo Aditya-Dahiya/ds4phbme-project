@@ -489,9 +489,15 @@ Inputs {.sidebar, data-width=500}
 
 ## please change the directoryies to the respective gt=ithub addresses, unfortuneatly unable to acquire raw file link
 
-data = ocsdata %>% select(CMAQ,aod,log_pri_length_15000,somehs,log_nei_2008_pm25_sum_10000)
-lr_model = readRDS("https://raw.githubusercontent.com/Aditya-Dahiya/ds4phbme-project/main/lr_model.rds")
-xgb_model = readRDS(""https://raw.githubusercontent.com/Aditya-Dahiya/ds4phbme-project/main/xgb_model.rds"")
+data = ocsdata %>% select(value,CMAQ,aod,log_pri_length_15000,somehs,log_nei_2008_pm25_sum_10000)
+lr_model = readRDS('C:/Users/Sejal Ghate/Documents/lr_model.rds')
+xgb_model = readRDS('C:/Users/Sejal Ghate/Documents/xgb_model.rds')
+
+
+fit = lm(value ~ . -1, data = data)
+coefs = coef(fit)
+
+# pollution = 
 
 ```
 
@@ -554,7 +560,26 @@ function(CMAQ, aod, log_pri_length_15000, somehs, log_nei_2008_pm25_sum_10000, .
     
 }
 
+
+
+new_prediction <- eventReactive(eventExpr = input$apply, valueExpr = {
+    
+    make_pred(
+      CMAQ = input$cmaq,
+      aod = input$aod,
+      log_pri_length_15000 = input$area,
+      somehs = input$edu,
+      log_nei_2008_pm25_sum_10000 = input$emission,
+      .ml_model = lr_model)
+    
+}, ignoreNULL = FALSE)
+
+
+
+
 ```
+
+
 
 
 ```{r model output}
