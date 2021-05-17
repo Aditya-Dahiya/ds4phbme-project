@@ -34,6 +34,6 @@ This project focuses on the [Air Data](https://www.epa.gov/outdoor-air-quality-d
 
 - The **Visualization** tab shows different visualizations of $PM_{2.5}$ levels in ${\mu}g/m^{3}$ over time periods, states, sites and seasons.  
 - Then, **Data Analysis** tab adds important graphs to analyze month-wise, year-wise and smoothed trens of PM 2.5 levels in various counties selected by the user. It also allows one to examine data in cities within the selected counties.  
-- Finally, the **Prediction** tab analyzes Roger D. Peng's [dataset](https://raw.githubusercontent.com/opencasestudies/ocs-bp-air-pollution/master/data/raw/pm25_data.csv) and displays important predictors. It then uses machine learning algorithms to predict $PM_{2.5}$ levels and find best predictor variables.
+- Finally, the **Prediction** tab analyzes Roger D. Peng's [dataset](https://raw.githubusercontent.com/opencasestudies/ocs-bp-air-pollution/master/data/raw/pm25_data.csv) and displays important predictors. It then uses machine learning algorithms to predict PM 2.5 levels and find best predictor variables.
 
 
