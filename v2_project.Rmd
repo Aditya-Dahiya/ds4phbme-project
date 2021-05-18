@@ -1,0 +1,739 @@
+---
+title: "  Air Pollution Analysis in the Unites States of America"
+output: 
+  flexdashboard::flex_dashboard:
+    theme: united
+    css: style.css
+runtime: shiny
+---
+
+```{r}
+
+
+# Loading the required libraries
+library(tidyverse)
+library(lubridate)
+library(latex2exp)
+library(sf)
+library(maps)
+library(rgeos)
+library(rnaturalearth)
+library(plotly)
+library(shinyWidgets)
+library(shiny)
+library(RColorBrewer)
+library(rnaturalearthdata)
+library(ggplot2)
+library(extrafont)
+library(mapdata)
+library(xgboost)
+library(caret)
+library(ggplot2)
+library(data.table)
+library(flexdashboard)
+
+
+##################### Global Data Sets Loading ##########################
+# Loading the wrangled data sets
+load(url("https://raw.githubusercontent.com/Aditya-Dahiya/ds4phbme-project/main/data/wrangled/Annual_Data_PM2-5_Sites.rda"))
+# Plotting the Annual Average Data on PM 2.5 on USA map
+USmap = ne_countries(country = "united states of america",
+                     scale = "medium",
+                     returnclass = "sf")
+USstates = spData::us_states
+UScounties = sf::st_as_sf(
+    maps::map("county", 
+              plot = FALSE,
+              fill = TRUE))
+AnnData = AnnData %>%
+            mutate(xloc = - 110, 
+                   yloc = 27)
+# Creating subsets using User Inputs for the Shiny App
+List_States = unique(AnnData$`State Name`)[1:50] %>% sort()
+# Creating some data frames for maps' plotting
+UScounties = sf::st_as_sf(maps::map("county", 
+                                    plot = FALSE,
+                                    fill = TRUE))
+temp = str_split(string = UScounties$ID, 
+                 pattern = ",", 
+                 simplify = TRUE,
+                 n = 2) %>%
+    as_tibble() %>%
+    mutate(State = str_to_title(V1)) %>%
+    mutate(County = str_to_title(V2)) %>%
+    select(State, County)
+UScounties = bind_cols(UScounties, temp)
+rm(temp)
+```
+
+
+
+Overview
+===================================== 
+    
+Column
+-------------------------------------
+
+### **Project Overview**
+
+**Air pollution** has been an increasing source of lung infections and and also ranks very high for being one of the most prominent causes for mortality across the world.
+
+After observing the trends in air pollution in the US over the last few years by looking the the animations, we have noticed a steep decrease in air pollution levels over the years, showing signs of positivity. However, as individual assessment of states is concerned, as per a 2008 dataset, more than half of the states are still well above optimum pollution levels. 
+
+Our goal is to create an app that can utilize real-time data and not just indicate current levels of pollution in an area, but also predict an air quality index over a period of time, to ensure appropriate ensures can be undertaken. 
+
+A 2008 air pollution dataset of the United States of America has been developed by Dr. Roger Peng and team (Details in About section). A future effort would be to extend this to a real-time app also including air pollution levels for other countries such as India. 
+
+
+    
+### **USA: Historical trends in PM 2.5 levels**
+
+```{r, echo=FALSE}
+knitr::include_graphics(path = "https://raw.githubusercontent.com/Aditya-Dahiya/ds4phbme-project/main/gganim1995-2020.gif")
+```
+
+
+
+Column
+-------------------------------------
+
+### **Average pollution in every state in the year 2008**
+
+```{r}
+
+load (url("https://github.com/Aditya-Dahiya/ds4phbme-project/blob/main/data/wrangled/wr_ocsdata.rda?raw=true"))
+
+mean_dat = ocsdata %>%
+  group_by(state) %>%
+  summarise_at(vars(value), funs(mean(., na.rm=TRUE)))
+
+
+p<-ggplot(mean_dat, aes(x=state, y=value, fill = value>10)) +
+  geom_bar(stat="identity",color="black",alpha = 0.75) +
+  ggtitle("Average metric of air pollution in every state (ug/m2)") +
+  theme(plot.title = element_text(hjust = 0.5), 
+              axis.text.x = element_text(color="black", size=8, angle=90),
+              axis.text.y = element_text(face="bold", color="black", size=10))+
+  labs(fill = "Polluted?") +
+  xlab("Country") +
+  ylab("Air Quality Index")
+
+  
+ggplotly(p)
+
+```
+
+### **Average level of PM 2.5 in EPA monitoring stations over years**
+
+```{r}
+knitr::include_graphics(path = "https://raw.githubusercontent.com/Aditya-Dahiya/ds4phbme-project/main/g1lineplot.gif")
+```
+
+
+
+Visualizations
+===================================== 
+    
+Inputs {.sidebar}
+-------------------------------------
+
+The [EPA](https://www.epa.gov/) collects [Air Quality data](https://www.epa.gov/outdoor-air-quality-data) from Outdoor Monitor sites across the US. This page harvests data from EPA's API [webpage](https://aqs.epa.gov/aqsweb/documents/data_api.html), and displays the outdoor monitors' location and their average annual PM 2.5 levels.  
+
+**Select the state and year to update the maps**  
+
+```{r}
+# shiny inputs defined here
+pickerInput(
+   inputId = "Sel_State",
+   label = "Select State", 
+   choices = List_States,
+   selected = List_States[5]
+)
+sliderInput(inputId = "Sel_Year", 
+            label = "Select year to display", 
+            min = 1995, 
+            max = 2020, 
+            value = 2015)
+```
+
+
+Column
+-------------------------------------
+    
+### <font size="3">**Air Quality Monitoring Sites: Mean Annual PM 2.5 levels**</font>
+    
+```{r}
+renderPlotly({
+Sel_State = input$Sel_State
+Sel_Year = input$Sel_Year
+ggplotly(
+    ggplot(data = USmap) +
+    geom_sf(data = USstates, 
+            fill = NA, 
+            color = "grey",
+            alpha = 0.5) +
+    coord_sf(xlim = c(-125, -66), ylim = c(24.5, 50), 
+             expand = FALSE) +
+    ggthemes::theme_map() + 
+    geom_point(data = AnnData[AnnData$Year == Sel_Year, ],
+               mapping = aes(x = Longitude, 
+                             y = Latitude,
+                             col = MeanPM2.5,
+                             text = `County Name`,
+                             text1 = `City Name`),
+               size = 0.7,
+               alpha = 0.5,
+               pch = 20) +
+    geom_text(data = AnnData[AnnData$Year == Sel_Year, ], 
+              aes(y = yloc, x = xloc, 
+                  label = as.character(Year)), 
+              check_overlap = TRUE, 
+              size = 5, 
+              fontface="bold") + 
+    scale_color_gradientn(colours = topo.colors(7), 
+                          na.value = "transparent",
+                          breaks = c(0, 5, 10, 15),
+                          labels = c(0, 5, 10, 15),
+                          limits = c(0, 20), 
+                          name = "PM 2.5 (ug/m3)"),
+    tooltip = c("text", "text1", "MeanPM2.5")
+    )
+})
+```
+    
+### <font size="3">**Maximum PM 2.5 levels (ug/m3) recorded at each site during the year**</font>
+
+```{r}
+renderPlotly({
+Sel_State = input$Sel_State
+Sel_Year = input$Sel_Year
+ggplotly(
+    ggplot(data = USmap) +
+    geom_sf(data = USstates, 
+            fill = NA, 
+            color = "grey",
+            alpha = 0.5) +
+    coord_sf(xlim = c(-125, -66), ylim = c(24.5, 50), 
+             expand = FALSE) +
+    ggthemes::theme_map() + 
+    geom_point(data = AnnData[AnnData$Year == Sel_Year, ],
+               mapping = aes(x = Longitude, 
+                             y = Latitude,
+                             col = MaxPM2.5,
+                             text = `County Name`,
+                             text1 = `City Name`),
+               size = 0.7,
+               alpha = 0.5,
+               pch = 20) +
+    geom_text(data = AnnData[AnnData$Year == Sel_Year, ], 
+              aes(y = yloc, x = xloc, 
+                  label = as.character(Year)), 
+              check_overlap = TRUE, 
+              size = 5, 
+              fontface="bold") + 
+    scale_color_gradientn(colours = rev(heat.colors(10)), 
+                          na.value = "transparent",
+                          breaks = c(0, 25, 50, 75),
+                          labels = c(0, 25, 50, 75),
+                          limits = c(0, 100), 
+                          name = "PM 2.5 (ug/m3)"),
+    tooltip = c("text", "text1", "MaxPM2.5")
+    )
+})
+```
+
+
+Column
+-------------------------------------
+    
+### <font size="3">**Monitoring Sites in selected State: Mean Annual PM 2.5 levels**</font>
+    
+```{r}
+renderPlotly({
+  Sel_State = input$Sel_State
+  Sel_Year = input$Sel_Year
+  ggplotly(
+    UScounties %>%            
+        filter(State == Sel_State) %>%
+        ggplot() +
+        geom_sf(fill = NA, 
+                color = "grey",
+                alpha = 0.5) +
+        ggthemes::theme_map() + 
+        geom_point(data = AnnData[(AnnData$Year == Sel_Year &
+                                       AnnData$`State Name` == Sel_State), ],
+                   mapping = aes(x = Longitude, 
+                                 y = Latitude,
+                                 col = MeanPM2.5,
+                                 text = `County Name`,
+                                 text1 = `City Name`),
+                   size = 1.5,
+                   alpha = 0.5,
+                   pch = 20) +
+        scale_color_gradientn(colours = topo.colors(7), 
+                              na.value = "transparent",
+                              breaks = c(0, 5, 10, 15),
+                              labels = c(0, 5, 10, 15),
+                              limits = c(0, 20), 
+                              name = "PM 2.5 (ug/m3)"),
+    tooltip = c("text", "text1", "MeanPM2.5")
+  )
+})
+```
+
+
+### <font size="3">**State-wise Mean PM 2.5 level trends (1995 - 2020): Selected state highlighted**</font>
+
+
+```{r}
+renderPlot({
+  
+  Sel_State = input$Sel_State
+  Sel_Year = input$Sel_Year
+  
+  AnnData %>%
+    group_by(`State Name`, Year) %>%
+    summarize(MMPM2.5 = mean(MeanPM2.5)) %>%
+    mutate(ColState = ifelse(`State Name` == Sel_State, 1, 0.2)) %>%
+    mutate(ColState = as.factor(ColState)) %>%
+    
+    ggplot(aes(x = Year, y = MMPM2.5)) +
+    geom_line(aes(col = ColState,
+                  group = `State Name`,
+                  alpha = ColState),
+              lwd = 1) +
+    scale_y_continuous(limits = c(4, 16)) +
+    scale_color_manual(values = c("darkgrey", "black"),
+                       name = "States",
+                       labels = c("Other States", Sel_State)) +
+    theme_classic() +
+    theme(legend.position = "bottom") +
+    labs(y = "Mean Annual PM 2.5 levels (ug/m3)",
+         x = NULL) +
+    guides(alpha = FALSE)
+  
+  
+})
+```  
+
+
+Data Analysis
+=====================================     
+
+```{r global}
+library(tidyverse)
+library(shiny)
+# Loading the daily PM 2.5 and AQI data set
+load(url("https://raw.githubusercontent.com/Aditya-Dahiya/ds4phbme-project/main/data/wrangled/Daily_Data_10years.rda"))
+load(url("https://raw.githubusercontent.com/Aditya-Dahiya/ds4phbme-project/main/data/wrangled/List_of_States_Counties_Cities.rda"))
+# Creating subsets using User Inputs for the Shiny App
+List_States = unique(ListDlyData$`State Name`)[1:50]
+```
+
+Column {.sidebar}
+-----------------------------------------------------------------------
+
+**This page pulls data off the EPA's [API webpage](https://aqs.epa.gov/aqsweb/documents/data_api.html) to display analytic trends of PM 2.5 (in ${\mu}g / m^{3}$) across different Counties selected by the user.**  
+
+**Note: Kindly wait for a few moments till the page loads data from the web.**  
+
+```{r}
+selectInput(inputId = "Sel_State1", 
+            label = "Select a state :",
+            choices = List_States,
+            selected = List_States[5])
+
+List_Counties = reactive({
+  unique(ListDlyData[ListDlyData$`State Name` %in% input$Sel_State1, ]$`County Name`) %>% 
+    sort()
+})
+renderUI({
+selectInput(inputId = "Sel_County1", 
+            label = "Select Counties to analyse:",
+            choices = List_Counties(),
+            selected = List_Counties()[c(12, 13)],
+            multiple = TRUE)
+  })
+List_Cities = reactive({
+  unique(ListDlyData[ListDlyData$`County Name` %in% input$Sel_County1, ]$`City Name`) %>% 
+    sort()
+})
+renderUI({
+selectInput(inputId = "Sel_City1", 
+            label = "Select Cities within these Counties:",
+            choices = List_Cities(),
+            selected = List_Cities()[1:length(List_Cities())],
+            multiple = TRUE)
+  })
+Plotdata = reactive({
+        DlyData %>%
+        filter(`State Name` %in% input$Sel_State1,
+               `County Name` %in% input$Sel_County1) %>%
+        mutate(Month = lubridate::month(Date,
+                                        label = TRUE)) %>%
+        mutate(Year = lubridate::year(Date))
+  })
+```
+
+**Note:** This page extracts data previously scraped and stored in GitHub to ensure quicker response time. Detailed data extraction is in this [R Script](https://github.com/Aditya-Dahiya/ds4phbme-project/blob/main/EPA%20Datasets%20Fetch%20AQSR.R).
+
+
+
+Column 
+-----------------------------------------------------------------------
+
+### <font size="3">**Plot of daily PM 2.5 levels, with an overlaid smoothing line**</font>
+
+```{r}
+renderPlot({
+    
+    Plotdata4 = Plotdata()
+    
+    ggplot(data = Plotdata4, aes(x = Date, y = PM2.5)) + 
+        geom_smooth(aes(y = PM2.5, 
+                            col = `County Name`),
+                            se = FALSE) +
+        geom_point(aes(col = `County Name`),
+                   alpha = 0.1,
+                   pch = 20) + 
+        scale_y_continuous(limits = c(0,
+                                      quantile(Plotdata4$PM2.5, 0.9))) + 
+        theme_classic() + 
+        theme(legend.position = "bottom") +
+        labs(x = NULL, 
+             y = latex2exp::TeX("PM_{2.5} \ \ levels \ \ (ug / m^{3})")
+        )
+    
+})
+```
+
+
+### <font size="3">**Average PM 2.5 levels in different Cities within these Counties**</font>
+
+```{r}
+renderPlot({
+  
+  Plotdata1 = Plotdata()
+  
+  ggplot(Plotdata1, aes(x = Date)) + 
+    geom_smooth(aes(y = PM2.5, 
+                    col = `City Name`),
+                    se = FALSE) +
+    theme_classic() + 
+    theme(legend.position = "bottom") +
+    labs(x = NULL,
+         y = latex2exp::TeX("PM_{2.5} \ \ levels \ \ (ug / m^{3})"))
+  
+})
+```
+
+
+Column 
+-----------------------------------------------------------------------
+
+### <font size="3">**Average monthly PM 2.5 levels**</font>
+
+```{r}
+renderPlot({
+  
+  Plotdata2 = Plotdata()
+  
+  ggplot(data = Plotdata2) +
+    geom_boxplot(mapping = aes(x = Month, 
+                               y = PM2.5,
+                               col = `County Name`),
+                 outlier.size = 1,
+                 outlier.alpha = 0.1) +
+    scale_y_continuous(limits = c(0, 
+                                  quantile(Plotdata2$PM2.5, 0.99))) +
+    theme_classic() +
+    theme(legend.position = "bottom") +
+    labs(x = NULL, 
+         y = latex2exp::TeX("PM_{2.5} \ \ levels \ \ (ug / m^{3})"))
+})
+```
+    
+
+
+### <font size="3">**Annual Average PM 2.5 Levels (ug/m3)**</font>
+
+```{r}
+renderPlot({
+  
+  Plotdata3 = Plotdata()
+  
+  ggplot(data = Plotdata3) +
+    geom_boxplot(mapping = aes(x = as.factor(Year), 
+                               y = PM2.5,
+                               col = `County Name`),
+                 outlier.size = 1,
+                 outlier.alpha = 0.1) +
+    scale_y_continuous(limits = c(0, 
+                                  quantile(Plotdata3$PM2.5, 0.99))) +
+    theme_classic() +
+    theme(legend.position = "bottom") +
+    labs(x = NULL, 
+         y = latex2exp::TeX("PM_{2.5} \ \ levels \ \ (ug / m^{3})"))
+  
+})
+```
+
+
+Prediction
+=====================================  
+
+
+<font size="5"> **In this tab we predict whether the area you have selected would be polluted!**</font>
+
+Inputs {.sidebar, data-width=500}
+-------------------------------------
+
+```{r}
+############# Using a linear regression model for regression and understanding the air pollution values in that region ###############
+
+## Load in the data
+load (url("https://github.com/Aditya-Dahiya/ds4phbme-project/blob/main/data/wrangled/wr_ocsdata.rda?raw=true"))
+
+
+#creating new dataset 
+
+dfnewreg = ocsdata %>% select(value, CMAQ, somehs, aod, log_pri_length_15000, log_nei_2008_pm25_sum_10000)
+
+set.seed(100)
+index = sample(1:nrow(dfnewreg), 0.7*nrow(dfnewreg))
+
+train = dfnewreg[index,] #create training data 
+test = dfnewreg [-index,] #create test data
+
+cols = c('value', 'CMAQ', 'somehs', 'aod', 'log_pri_length_15000', 'log_nei_2008_pm25_sum_10000')
+pre_proc_val = preProcess(train[,cols], method = c("center",  "scale"))
+
+train [,cols] = predict(pre_proc_val, train[,cols])
+test[,cols]= predict(pre_proc_val, test[,cols])
+
+#run linear regression on entire set of variables 
+
+lr = lm(value ~ CMAQ + somehs + aod + log_pri_length_15000 + log_nei_2008_pm25_sum_10000 - 1, data = dfnewreg)
+coeffs = coef(lr)
+formula = function(cmaq,somehs,aod,area,emission){
+  value = coeffs[1]*cmaq + coeffs[2]*somehs + coeffs[3]*aod + coeffs[4]*area + coeffs[5]*emission
+}
+
+#create model evaluation metrics
+#Step 1 = create evaluation metrics function
+####################################################### FOR VINAYAK ######################################################
+# eval_metrics = function(model, df, predictions, target){
+#   resids = df[,target] - predictions
+#   resids2 = resids**2
+#   N = length(predictions)
+#   r2=as.character(round(summary(model)$r.squared,2))
+#   adj_r2=as.character(round(summary(model)$adj.r.squared,2))
+#   print(adj_r2)
+#   print(as.character(round(sqrt(sum(resids2)/N),2)))
+# }
+# 
+# 
+# p_train = predict(lr, newdata=train)
+# eval_metrics(lr, train, p_train, target = 'value')
+# 
+# 
+# p_test = predict(lr, newdata=test)
+# eval_metrics(lr, test, p_test, target = 'value')
+##################################################### FOR VINAYAK #######################################################
+
+```
+
+<font size="3">**Enter the following details:**</font>
+
+```{r}
+
+sliderInput("area", label = h6("How large is your area (in m) ?"), min = min(dfnewreg$log_pri_length_15000), 
+        max = max(dfnewreg$log_pri_length_15000), value = 12)
+    
+
+sliderInput("edu", label = h6("What is the education level in your area?"), min = min(dfnewreg$somehs), 
+        max = max(dfnewreg$somehs), value = 36 )
+
+
+sliderInput("emission", label = h6("How high is the emission in your area?"), min = min(dfnewreg$log_nei_2008_pm25_sum_10000), 
+        max = max(dfnewreg$log_nei_2008_pm25_sum_10000), value = 4.5)
+
+ 
+sliderInput("CMAQ", label = h6("Roughly how polluted do you feel your area is on a scale of 1-10?"), min = min(dfnewreg$CMAQ), 
+        max = max(dfnewreg$CMAQ), value = 12.5)
+
+sliderInput("aod", label = h6("What is the range of particulate pollution in your area?"), min = min(dfnewreg$aod), 
+        max = max(dfnewreg$aod), value = 74)
+
+```
+
+
+Column {data-width=800}
+-----------------------------------------------------------------------
+
+**Check whether your area would be polluted here:**
+
+
+
+
+
+```{r}
+
+renderText({
+    coeffs[1]*input$CMAQ + coeffs[2]*input$edu + coeffs[3]*input$aod + coeffs[4]*input$area + coeffs[5]*input$emission
+
+  })
+
+
+```
+
+
+```{r,echo=FALSE}
+
+### XGBOOSTING AS A CLASSIFICATION MODEL FOR AIR POLLUTION: WILL GIVE A RED/GRE
+### EN SIGN SHOWING IF AREA IS POLLUTED OR NOT
+load (url("https://github.com/Aditya-Dahiya/ds4phbme-project/blob/main/data/wrangled/wr_ocsdata.rda?raw=true"))
+
+
+ocsdata = ocsdata %>% mutate(polluted = case_when(value>10 ~ 1, value <= 10 ~ 0))
+label = as.numeric(factor(ocsdata$polluted)) - 1
+ocsdata = ocsdata %>% select(CMAQ,aod,somehs,log_pri_length_15000,log_nei_2008_pm25_sum_10000)
+
+
+# get the numb 70/30 training test split
+numberOfTrainingSamples <- round(length(label) * .7)
+
+# training data
+train_data <- ocsdata[1:numberOfTrainingSamples,]
+train_labels <- label[1:numberOfTrainingSamples]
+
+# testing data
+test_data <- ocsdata[-(1:numberOfTrainingSamples),]
+test_labels <- label[-(1:numberOfTrainingSamples)]
+
+setDT(train_data)
+setDT(test_data)
+setDT(ocsdata)
+
+new_tr <- model.matrix(~.+0,data = train_data) 
+new_ts <- model.matrix(~.+0,data = test_data)
+ocs = model.matrix(~.+0,data = ocsdata)
+
+# put our testing & training data into two separated Dmatrixs objects
+dtrain <- xgb.DMatrix(data = new_tr, label= train_labels)
+dtest <- xgb.DMatrix(data = new_ts, label= test_labels)
+full = xgb.DMatrix(data = ocs, label = label)
+
+params <- list(booster = "gbtree", objective = "binary:logistic", eta=0.3, gamma=0, max_depth=6, min_child_weight=1, subsample=1, colsample_bytree=1)
+
+# xgbcv <- xgb.cv( params = params, data = dtrain, nrounds = 100, nfold = 5, showsd = T, stratified = T, print_every_n = 10, early_stopping_rounds = 20, maximize = F)
+
+xgb1 <- xgb.train (params = params, data = dtrain, nrounds = 8, watchlist = list(val=dtest,train=dtrain), print_every_n = 10, early_stopping_rounds = 10, maximize = F,eval = 'rmse')
+xgbpred <- predict (xgb1,full)
+xgbpred <- ifelse (xgbpred > 0.5,1,0)
+
+
+
+
+```
+
+
+```{r}
+######### This is what i was trying: to put all the predictors into a data frame and then getting a single predicted value. But going wrong in reactivity
+
+
+
+
+# 
+#    dataset = reactive(as.data.frame(c(input$CMAQ,input$edu,input$aod,input$area,input$emission)))
+#    pred = predict(lr, newdata = dataset())
+# 
+# 
+# renderPrint({pred})
+
+
+
+
+```
+
+About
+=====================================  
+
+
+```{r}
+```
+   
+
+Column {data-width=850}
+-------------------------------------
+**Authors:**  
+
+1. Sejal Ghate (BME student, Whiting School of Engineering)  
+
+2. Vinayak Bhardwaj (MPH student, Bloomberg School of Public Health)  
+
+3. Aditya Dahiya (MPH student, Bloomberg School of Public Health)  
+
+This project focuses on the [Air Data](https://www.epa.gov/outdoor-air-quality-data): Air Quality Data Collected at Outdoor Monitors Across the United States. It uses and combines data from three sources:-  
+
+(a) Outdoor air quality [data](https://aqs.epa.gov/aqsweb/documents/data_api.html) collected from state, local and tribal monitoring agencies across the United States by the [EPA](https://www.epa.gov/).  
+
+(b) Data harvested from the Air Quality System (AQS) API using the R package [aqrs](https://github.com/jpkeller/aqsr), developed by [Joshua P. Keller](https://github.com/jpkeller), [Roger D. Peng](https://github.com/rdpeng) and [Daniel Bride](https://github.com/danielbride).  
+
+(c) A special [data set](https://raw.githubusercontent.com/opencasestudies/ocs-bp-air-pollution/master/data/raw/pm25_data.csv) created by [Roger D. Peng](https://github.com/rdpeng), used by Open Case Studies project on predicting PM 2.5 levels using machine learning algorithms in [tidymodels](https://www.tidymodels.org/).  
+
+**Tabs in the app**:  
+
+- The **Visualization** tab shows different visualizations of $PM_{2.5}$ levels in ${\mu}g/m^{3}$ over time periods, states, sites and seasons.  
+- Then, **Data Analysis** tab adds important graphs to analyze month-wise, year-wise and smoothed trens of PM 2.5 levels in various counties selected by the user. It also allows one to examine data in cities within the selected counties.  
+- Finally, the **Prediction** tab analyzes Roger D. Peng's [dataset](https://raw.githubusercontent.com/opencasestudies/ocs-bp-air-pollution/master/data/raw/pm25_data.csv) and displays important predictors. It then uses machine learning algorithms to predict $PM_{2.5}$ levels and find best predictor variables.
+    
+    
+### Citations and Credits  
+
+1. [Flexdashboard](https://rmarkdown.rstudio.com/flexdashboard/index.html) for R-Markdown  
+
+2. [Shiny](https://shiny.rstudio.com/) from R Studio  
+
+3. R package [aqsr](https://github.com/jpkeller/aqsr) for data downloading from EPA's API  
+
+4. United States Environment Protection Agency (EPA): [Air Quality System (AQS) API](https://aqs.epa.gov/aqsweb/documents/data_api.html)  
+
+5. United States EPA: Pre-Generated [Data Files](https://aqs.epa.gov/aqsweb/airdata/download_files.html)  
+
+6. [Geocomputation with R](https://geocompr.robinlovelace.net/): Lovelace, Nowosad & Muenchow  
+
+7. R package [gganimate](https://gganimate.com/index.html) by Thomas Lin Pedersen & David Robinson
+
+8. R packages: `tidyverse`, `aqsr`, `tidymodels`, `here`, `lubridate`, `latex2exp`, `sf`, `maps`, `rgeos`, `rnaturalearth`, `plotly`, `corrplot`, `GGally`, `vip`, `ggthemes`.
+
+9. The animated graphs on **Overview** page were created using package `gganimate`, the source code is attached [here](https://raw.githubusercontent.com/Aditya-Dahiya/ds4phbme-project/main/g1lineplot.gif).
+
+```{r}
+
+
+
+```
+   
+Column {data-width=150}
+-------------------------------------
+   
+### **Sejal Ghate**  
+
+
+```{r}
+knitr::include_graphics(path = "https://github.com/Aditya-Dahiya/ds4phbme-project/blob/main/sejal.jpeg?raw=true")
+```   
+ 
+### **Vinayak Bhardwaj**  
+
+
+```{r}
+knitr::include_graphics(path = "https://github.com/Aditya-Dahiya/ds4phbme-project/blob/main/Vinayak.jpg?raw=true")
+```
+
+### **Aditya Dahiya**  
+
+```{r}
+knitr::include_graphics(path = "https://raw.githubusercontent.com/Aditya-Dahiya/ds4phbme-project/main/Aditya.jpg")
+```
