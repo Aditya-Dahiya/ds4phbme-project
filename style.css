@@ -1,0 +1,29 @@
+/* Whole document: */
+  body{
+    font-family: Helvetica;
+    font-size: 12pt;
+  }
+
+
+/* Headers */
+  h1,h2,h3,h4,h5,h6{
+    font-size: 15pt; 
+    color: #921229;
+  }
+
+
+/* NAVBAR */
+.navbar-inverse {
+    background-color: #121212;
+    border-color: #414141;
+}
+
+.navbar-inverse .navbar-brand {
+    color: #ffffff;
+    font-family: "Serpentine";
+    font-style: oblique;
+}
+
+
+
+
