@@ -31,6 +31,7 @@ library(caret)
 library(ggplot2)
 library(data.table)
 library(flexdashboard)
+library(shiny)
 
 
 ##################### Global Data Sets Loading ##########################
@@ -483,9 +484,9 @@ Prediction
 =====================================  
 
 
-<font size="5"> **In this tab we predict whether the area you have selected would be polluted!**</font>
+<font size="4"> **In this tab we predict whether the area you have selected would be polluted!**</font>
 
-Inputs {.sidebar, data-width=500}
+Inputs {.sidebar, data-width=300}
 -------------------------------------
 
 ```{r}
@@ -519,28 +520,6 @@ formula = function(cmaq,somehs,aod,area,emission){
   value = coeffs[1]*cmaq + coeffs[2]*somehs + coeffs[3]*aod + coeffs[4]*area + coeffs[5]*emission
 }
 
-#create model evaluation metrics
-#Step 1 = create evaluation metrics function
-####################################################### FOR VINAYAK ######################################################
-# eval_metrics = function(model, df, predictions, target){
-#   resids = df[,target] - predictions
-#   resids2 = resids**2
-#   N = length(predictions)
-#   r2=as.character(round(summary(model)$r.squared,2))
-#   adj_r2=as.character(round(summary(model)$adj.r.squared,2))
-#   print(adj_r2)
-#   print(as.character(round(sqrt(sum(resids2)/N),2)))
-# }
-# 
-# 
-# p_train = predict(lr, newdata=train)
-# eval_metrics(lr, train, p_train, target = 'value')
-# 
-# 
-# p_test = predict(lr, newdata=test)
-# eval_metrics(lr, test, p_test, target = 'value')
-##################################################### FOR VINAYAK #######################################################
-
 ```
 
 <font size="3">**Enter the following details:**</font>
@@ -571,24 +550,26 @@ sliderInput("aod", label = h6("What is the range of particulate pollution in you
 Column {data-width=800}
 -----------------------------------------------------------------------
 
-**Check whether your area would be polluted here:**
-
-
-
-
+**Check the level of air pollution in your area (ug/m3):**
 
 ```{r}
 
-renderText({
-    coeffs[1]*input$CMAQ + coeffs[2]*input$edu + coeffs[3]*input$aod + coeffs[4]*input$area + coeffs[5]*input$emission
-
-  })
-
+obj = reactive({
+  value = coeffs[1]*input$CMAQ + coeffs[2]*input$edu + coeffs[3]*input$aod + coeffs[4]*input$area + coeffs[5]*input$emission
+})
 
 ```
 
 
-```{r,echo=FALSE}
+```{r}
+flexdashboard::renderValueBox({
+  valueBox(round(obj(),2), icon = "smog",color = 'lightblue')
+  
+})
+
+```
+
+```{r,echo=FALSE,results='hide'}
 
 ### XGBOOSTING AS A CLASSIFICATION MODEL FOR AIR POLLUTION: WILL GIVE A RED/GRE
 ### EN SIGN SHOWING IF AREA IS POLLUTED OR NOT
@@ -626,35 +607,28 @@ full = xgb.DMatrix(data = ocs, label = label)
 
 params <- list(booster = "gbtree", objective = "binary:logistic", eta=0.3, gamma=0, max_depth=6, min_child_weight=1, subsample=1, colsample_bytree=1)
 
-# xgbcv <- xgb.cv( params = params, data = dtrain, nrounds = 100, nfold = 5, showsd = T, stratified = T, print_every_n = 10, early_stopping_rounds = 20, maximize = F)
-
 xgb1 <- xgb.train (params = params, data = dtrain, nrounds = 8, watchlist = list(val=dtest,train=dtrain), print_every_n = 10, early_stopping_rounds = 10, maximize = F,eval = 'rmse')
-xgbpred <- predict (xgb1,full)
-xgbpred <- ifelse (xgbpred > 0.5,1,0)
-
-
-
-
 ```
 
+
+**Using an XGBoost Model, We classify this area to be Polluted (Returns 0) or not (Returns 1):**
+ 
 
 ```{r}
-######### This is what i was trying: to put all the predictors into a data frame and then getting a single predicted value. But going wrong in reactivity
+x = reactive({
+  
+  dataset = as.matrix(input$CMAQ,input$edu,input$aod,inpur$area,input$emission)
+  final_pred = predict(xgb1,dataset)
+  xgbpred = ifelse(final_pred > 0.45,1,0)
+  
+})
 
-
-
-
-# 
-#    dataset = reactive(as.data.frame(c(input$CMAQ,input$edu,input$aod,input$area,input$emission)))
-#    pred = predict(lr, newdata = dataset())
-# 
-# 
-# renderPrint({pred})
-
-
-
+renderText({
+  x()
+})
 
 ```
+
 
 About
 =====================================  
