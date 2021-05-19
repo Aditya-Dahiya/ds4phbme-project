@@ -634,7 +634,7 @@ renderText({
 
   
 ```{r}
-knitr::include_graphics(path = "https://github.com/Aditya-Dahiya/ds4phbme-project/blob/main/VarImp/Lasso.jpeg?raw=true")
+knitr::include_graphics(path = "https://github.com/Aditya-Dahiya/ds4phbme-project/blob/main/VarImp/linear.jpeg?raw=true")
 ```
 
 ```{r}
