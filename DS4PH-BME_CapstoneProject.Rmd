@@ -568,7 +568,7 @@ xgb1 <- xgb.train (params = params, data = dtrain, nrounds = 8, watchlist = list
 Inputs {.sidebar, data-width=100}
 -------------------------------------
 
-### <font size="3">**Enter the following details:**</font>
+<font size="3">**Enter the following details:**</font>
 
 ```{r}
 
