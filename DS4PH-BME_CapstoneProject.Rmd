@@ -1,5 +1,5 @@
 ---
-title: '  Air Pollution Analysis in the Unites States of America'
+title: '  Air Pollution Analysis in the United States of America'
 output:
   flexdashboard::flex_dashboard:
     theme: united
